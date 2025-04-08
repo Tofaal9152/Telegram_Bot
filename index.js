@@ -15,9 +15,11 @@ app.use(express.urlencoded({ extended: true }));
 
 // Define the route
 app.post("/new-message", async (req, res) => {
+  let responseData = null;
   const { message } = req.body;
-  if (!message) {
-    return res.end();
+  if (!message || !message.text) {
+    responseData = "No message text found";
+    return res.end(); // Ignore non-text messages
   }
 
   try {
@@ -27,13 +29,17 @@ app.post("/new-message", async (req, res) => {
       {
         contents: [
           {
-            parts: [{ text: message.text }],
+            parts: [
+              {
+                text: `You are an advanced AI model called Tolax, designed to understand and process human communication efficiently. Your goal is to provide helpful, engaging, and accurate responses. Please process the following message and respond with the most relevant and thoughtful reply based on the context, ensuring that your answer is both clear and concise: 
+                Message: ${message.text}`,
+              },
+            ],
           },
         ],
       }
     );
-    const responseData =
-      googleResponse.data.candidates[0].content.parts[0].text;
+    responseData = googleResponse.data.candidates[0].content.parts[0].text;
 
     await axios.post(
       `https://api.telegram.org/bot${TELEGRAM_API_TOKEN}/sendMessage`,
